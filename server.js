@@ -5,30 +5,50 @@
 var express = require('express');
 var firebase = require("firebase");
 
-
+if(process.env.fbPrivateKey) {
 firebase.initializeApp({
-  serviceAccount : {
-    projectId: process.env.fbProjectId,
-    clientEmail: process.env.fbClientEmail,
-    privateKey: process.env.fbPrivateKey
-  },
-  databaseURL:"https://ancientfirefly-af546.firebaseio.com/" //https://ancientfirefly-af546.firebaseio.com/
-});
-var db = firebase.database();
-var ref = db.ref('/ancientfirefly-af546');
+	  serviceAccount : {
+	    projectId: process.env.fbProjectId,
+	    clientEmail: process.env.fbClientEmail,
+	    privateKey: process.env.fbPrivateKey
+	  },
+	  databaseURL:"https://ancientfirefly-af546.firebaseio.com/" //https://ancientfirefly-af546.firebaseio.com/
+	});
+}
+else {
+	var fs = require('fs'); 
+	var path = '../AncientFirefly-227bbd8dd573.json'
+	var str = ''; 
+	fs.readFile(path, 'utf8', function(err, data) {
+		if(err) {
+			console.log(err.stack);
+			process.exit();
+		} else {
+			str = data; 	
+			firebase.initializeApp(JSON.parse(str));
+			initDb();
+		}
+	});	
 
-ref.once("value", function(snapshot) {
-  console.log(snapshot.val());
+}
+function initDb() {
+	var db = firebase.database();
+	var ref = db.ref('/ancientfirefly-af546');
+
+	ref.once("value", function(snapshot) {
+	  console.log(snapshot.val());
+	});
+	ref.child('diditwork').set({test : 'test'}, 
+
+	function(e){console.log(e);})
+	 ref.on("value", function(snapshot) {
+	  console.log(snapshot.val());
+	}, function (errorObject) {
+	  console.log("The read failed: " + errorObject.code);
 });
 
-ref.child('diditwork').set({test : 'test'}, 
-function(e){console.log(e);})
- 
-ref.on("value", function(snapshot) {
-  console.log(snapshot.val());
-}, function (errorObject) {
-  console.log("The read failed: " + errorObject.code);
-});
+
+}
 
 var app = express();
 
