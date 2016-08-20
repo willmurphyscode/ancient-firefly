@@ -47,6 +47,9 @@ function initDb() {
 	  console.log("The read failed: " + errorObject.code);
 });
 
+ref.once("value", function(snapshot) {
+  console.log(snapshot.val()); 
+});
 
 }
 
