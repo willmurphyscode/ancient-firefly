@@ -18,7 +18,7 @@ var db = firebase.database();
 var ref = db.ref('/ancientfirefly-af546');
 
 ref.once("value", function(snapshot) {
-  console.log(snapshot.val());
+  console.log(snapshot.val()); 
 });
 
 ref.child('diditwork').set({test : 'test'}, 
