@@ -2,59 +2,35 @@
 // where your node app starts
 //var CONFIG_FILE = "./.hyperweb_aws_credentials.json";
 // init project
-var express = require('express');
-var firebase = require("firebase");
-
-if(process.env.fbPrivateKey) {
-firebase.initializeApp({
-	  serviceAccount : {
-	    projectId: process.env.fbProjectId,
-	    clientEmail: process.env.fbClientEmail,
-	    privateKey: process.env.fbPrivateKey
-	  },
-	  databaseURL:"https://ancientfirefly-af546.firebaseio.com/" //https://ancientfirefly-af546.firebaseio.com/
-	});
+var config = {}; 
+if(process.env.fbClientEmail) {
+      config.project_id = process.env.fbProjectId;
+      config.client_email = process.env.fbClientEmail;
+      config.private_key = process.env.fbPrivateKey; 
+} else {
+      config = require('./private.js').config; 
 }
-else {
-	var fs = require('fs'); 
-	var path = '../AncientFirefly-227bbd8dd573.json'
-	var str = ''; 
-	fs.readFile(path, 'utf8', function(err, data) {
-		if(err) {
-			console.log(err.stack);
-			process.exit();
-		} else {
-			str = data; 	
-			firebase.initializeApp(JSON.parse(str));
-			initDb();
-		}
-	});	
 
-}
-function initDb() {
-	var db = firebase.database();
-	var ref = db.ref('/ancientfirefly-af546');
+var rootRef = require('./firebaseInit.js').init(config); 
 
-	ref.once("value", function(snapshot) {
-	  console.log(snapshot.val());
-	});
-	ref.child('diditwork').set({test : 'test'}, 
+var services = {
+  ref : rootRef
 
-	function(e){console.log(e);})
-	 ref.on("value", function(snapshot) {
-	  console.log(snapshot.val());
-	}, function (errorObject) {
-	  console.log("The read failed: " + errorObject.code);
-});
+};
 
-ref.once("value", function(snapshot) {
-  console.log(snapshot.val()); 
-});
+var bookstore = require('./bookstore.js')(services); 
 
-}
+const book = require('./book.js').book; 
+const query = require('./queryBook.js').makeQuery; 
+
+var allQuery = query();
+
+var newBook = book("Austen, Jane", "Sense & Sensibility");
+
+
 
 var app = express();
-
+console.log('passed express');
 //var H = require("hyperweb");
 ///var ds = H.blastOff();
 //var datastore = require("./datastore").sync;
@@ -72,7 +48,7 @@ app.get("/", function (request, response) {
 }); 
 
 app.get("/books", function (request, response) {
-  response.send(books.getCurrent());
+  bookstore.findBook(allQuery, response.send, console.log); 
 });
 
 // could also use the POST body instead of query string: http://expressjs.com/en/api.html#req.body
@@ -91,54 +67,8 @@ app.post("/books", function(request, response){
   response.sendStatus(200);
 });
 
-const book = (title, tags) => {
-  var t = title;
-  var tgs = tags; 
-  return {
-    title : t,
-    tags : tgs
-  };
-  
-};
 // TODO fix datastore.set()
 // Simple in-memory store for now
-var books = {
-  datacache :[
-    book("Pride and Prejudice", "required"),
-    book("The Long Dark Tea-Time of the Soul", "humorous, irreverent")
-  ],
-  push: function(book) {
-    datacache.push(book);
-  //  datastore.set("books", datacache);
-  },
-  filter: function(predicate){
-    return datacache.filter(predicate);
-  },
-  addOrUpdate: function(oldBook, newBook){
-    var ix = oldBook ? datacache.indexOf(oldBook) : -1;
-    if(ix >= 0){
-      
-      datacache[ix] = newBook;
-    }
-    else {
-      datacache.push(newBook);
-    }
-    
-  // datastore.set("books", datacache);
-  },
-  getCurrent : function() {
-    return datacache; 
-  }
-};
-
-var datacache = [
-    book("Pride and Prejudice", "required"),
-    book("The Long Dark Tea-Time of the Soul", "humorous, irreverent")
-  ];
-  
-
-
-// listen for requests :)
 var listener = app.listen(process.env.PORT, function () {
   console.log('Your app is listening on port ' + listener.address().port);
 });
