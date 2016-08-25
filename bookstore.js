@@ -13,7 +13,9 @@ module.exports = function(services) {
 			if(val) {
 				for(var book in val) {
 					if(val.hasOwnProperty(book) && query(val[book])) {
-						result.push(val[book]);
+						var obj = val[book];
+						obj.id = book;
+						result.push(obj);
 					}
 				} 
 			}
@@ -24,6 +26,15 @@ module.exports = function(services) {
 
 
 	return {
+		addOrUpdate: function(book, query, success) {
+			var booksRef = ref.child('books'); 
+			booksRef.on('value',
+					(snapshot) => {
+						var results = handleBookQuery(snapshot, query); 
+						
+					},
+					(error) => console.log(error)); 
+		},
 		pushBook: function(book, success) {
 			var booksRef = ref.child('books'); 
 			var newBookRef = booksRef.push(); 
@@ -42,7 +53,12 @@ module.exports = function(services) {
 					(err) => error(err));
 		},
 		updateBook: function(oldBook, newBook) {
-		
+			var booksRef = ref.child('books');
+			var id = oldBook.id;
+			var delta = {};
+
+			delta[id] = newBook 
+			booksRef.update(delta);
 		},
 		deleteBook: function(delMe) {
 		
