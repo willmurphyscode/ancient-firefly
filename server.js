@@ -27,10 +27,14 @@ var allQuery = query();
 
 var newBook = book("Austen, Jane", "Sense & Sensibility");
 
+var bookcache = {}; 
 
 
+
+
+var express = require('express'); 
 var app = express();
-console.log('passed express');
+
 //var H = require("hyperweb");
 ///var ds = H.blastOff();
 //var datastore = require("./datastore").sync;
@@ -49,6 +53,10 @@ app.get("/", function (request, response) {
 
 app.get("/books", function (request, response) {
   bookstore.findBook(allQuery, response.send, console.log); 
+});
+
+app.get("/signin", function(request, response){
+  response.sendFile(__dirname + "/views/signin.html");
 });
 
 // could also use the POST body instead of query string: http://expressjs.com/en/api.html#req.body
