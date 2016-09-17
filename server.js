@@ -14,8 +14,8 @@ if(process.env.fbClientEmail) {
 var rootRef = require('./firebaseInit.js').init(config); 
 
 var services = {
-  ref : rootRef
-
+  ref : rootRef, 
+  console: console
 };
 
 var bookstore = require('./bookstore.js')(services); 
@@ -28,9 +28,7 @@ var allQuery = query();
 var newBook = book("Austen, Jane", "Sense & Sensibility");
 
 var bookcache = {}; 
-
-
-
+bookstore.findBook(allQuery, (result) => { bookcache = result;}, err => console.log(err));
 
 var express = require('express'); 
 var app = express();
@@ -52,7 +50,7 @@ app.get("/", function (request, response) {
 }); 
 
 app.get("/books", function (request, response) {
-  bookstore.findBook(allQuery, response.send, console.log); 
+  response.send(bookcache);
 });
 
 app.get("/signin", function(request, response){
@@ -61,22 +59,25 @@ app.get("/signin", function(request, response){
 
 // could also use the POST body instead of query string: http://expressjs.com/en/api.html#req.body
 app.post("/books", function(request, response){
-  ref.on("value", function(snapshot) {
-  console.log(snapshot.val());
-}, function (errorObject) {
-  console.log("The read failed: " + errorObject.code);
+    var theBook = book(request.query.author, request.query.title);
+    if(request.query.tags) {
+      var tags = request.query.tags
+        .split(' ');
+        
+    }
+
+    bookstore.pushBook(theBook, () => response.sendStatus(200));
+    
 });
 
-  var incomingTitle = request.query.title;
-  var incomingTags = request.query.tags; 
-  books.addOrUpdate(
-     books.filter(b => b.title == incomingTitle)
-    ,book(incomingTitle, incomingTags));
-  response.sendStatus(200);
-});
 
 // TODO fix datastore.set()
 // Simple in-memory store for now
+if(!process.env.PORT) {
+  process.env.PORT = 3000; 
+
+}
+
 var listener = app.listen(process.env.PORT, function () {
   console.log('Your app is listening on port ' + listener.address().port);
 });
